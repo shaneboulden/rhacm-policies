@@ -1,0 +1,51 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-bastion-access
+  namespace: rhacm-policies
+  annotations:
+    policy.open-cluster-management.io/standards: Australian ISM
+spec:
+  remediationAction: enforce
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: policy-console-access
+        spec:
+          remediationAction: enforce
+          severity: high
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                kind: Route # must have route 'console' with IP access defined
+                apiVersion: route.openshift.io/v1
+                metadata:
+                  name: console
+                  namespace: openshift-console
+                  annotations:
+                    haproxy.router.openshift.io/ip_whitelist: 13.238.17.157
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: binding-policy-bastion-access
+placementRef:
+  name: placement-bastion-access
+  kind: PlacementRule
+  apiGroup: apps.open-cluster-management.io
+subjects:
+- name: policy-bastion-access
+  kind: Policy
+  apiGroup: policy.open-cluster-management.io
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: placement-bastion-access
+spec:
+  clusterLabels:
+    matchLabels:
+      name: local-cluster
